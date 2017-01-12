@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/12 19:04:58 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/12 19:10:00 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,23 +143,6 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr, t_sect *sects)
 	print_list(elems);
 }
 
-
-char *fill_name(char str[16])
-{
-	char *ret;
-	ret = malloc(sizeof(char) * 17);
-	int i = 0;
-	while (i < 16)
-	{
-		ret[i] = str[i];
-		i++;
-	}
-	ret[i] = 0;
-	return ret;
-
-
-}
-
 t_sect *	add_section(struct segment_command_64 *lc, t_sect *sects)
 {
 	struct section_64			*sec;
@@ -191,17 +174,6 @@ t_sect *	add_section(struct segment_command_64 *lc, t_sect *sects)
 
 }
 
-void	print_sections(t_sect *sects)
-{
-	t_sect *tmp = sects;
-	while (tmp)
-	{
-		ft_printf("%d\n", tmp->i);
-		tmp = tmp->next;
-	}
-
-}
-
 t_sect *	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 {
 	t_sect *sects = NULL;
@@ -216,7 +188,6 @@ t_sect *	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 		lc = (void*)lc + lc->cmdsize;
 	}
 
-	//print_sections(sects);
 	return sects;
 }
 
