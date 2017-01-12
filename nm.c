@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/10 19:11:30 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/12 14:24:04 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,25 +43,29 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr)
 	while (++i < nsyms)
 	{
 		elem = malloc(sizeof(t_elem));
-		//	ft_printf("%x", (uint8_t)(stringtable + array[i].n_value));
 		int t = (uint8_t)(stringtable + array[i].n_type) & N_TYPE;
-		if (t == N_PBUD)
+		if (((uint8_t)(stringtable + array[i].n_sect)) != NO_SECT || t == N_SECT)
+		{
+			ft_printf("%d\n", (uint8_t)(stringtable + array[i].n_sect));
+			elem->type = sect();
+		}
+		else if (t == N_PBUD)
 			elem->type = 'U';
 		else if (t == N_UNDF)
+		{
 			elem->type = 'U';
-		//sometimes C if value if set ( ??? )
+			//sometimes C if value if set ( ??? )
+		}
 		else if (t == N_ABS)
 			elem->type = 'A';
-		else if (t == N_SECT)
-			elem->type = sect();
 		else if (t == N_INDR)
 			elem->type = 'I';
 		else
-		{
 			elem->type = '?';
-		}
-		/*else
-		  ft_printf(" %d", (uint8_t)(stringtable + array[i].n_sect));*/
+		if ((t & N_STAB) != 0)
+			elem->type = 'Z';
+		if ((t & N_EXT) == 0 && elem->type != '?')
+			elem->type = ft_tolower(elem->type);
 		elem->str = stringtable + array[i].n_un.n_strx;
 		elem->next = NULL;
 		if (elems == NULL)
@@ -80,19 +84,35 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr)
 		}
 	}
 	print_list(elems);
+	//ft_printf("%s\n" SECT_BSS);
 }
 
 
+void	add_section(struct segment_command_64 *lc, t_sect *sects)
+{
+	struct section_64			*sec;
+	sec = (struct section_64*)(lc + sizeof(lc) / sizeof(void*));
+	int i = 0;
+	while (i < lc->nsects)
+	{
+		ft_printf("%s\n", sec->sectname);
+		sec = (struct section_64 *)(((void*)sec) + sizeof(struct section_64));
+		i++;
+	}
+
+
+}
+
 void	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 {
+	t_sect *sects = NULL;
 
 	int i = -1;
 	while (++i < ncmds)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
 		{
-			ft_printf("%s ", lc->segname);
-			ft_printf("%d\n", i);
+			add_section(lc, sects);
 		}
 		lc = (void*)lc + lc->cmdsize;
 	}
@@ -111,7 +131,7 @@ void	handle_64(char *ptr)
 	lc = (void *)ptr + sizeof(*header);
 	i = 0;
 
-	//	get_sections(ptr, ncmds, (struct segment_command_64*)lc);
+	get_sections(ptr, ncmds, (struct segment_command_64*)lc);
 
 	while (++i < ncmds)
 	{

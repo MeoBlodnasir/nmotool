@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/10 18:31:29 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/12 14:24:04 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,12 @@ typedef struct			s_elem
 	struct s_elem		*next;
 	struct s_elem		*prev;
 }						t_elem;
+typedef struct s_sect
+{
+	char	*name;
+	int		i;
+	struct s_sect *next;
+}				t_sect;
 
 
 #endif
