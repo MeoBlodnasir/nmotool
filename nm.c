@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/12 14:24:04 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/12 19:04:58 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,17 +18,70 @@ void	print_list(t_elem *elems)
 	tmp = elems;
 	while (tmp)
 	{
-		ft_printf("VALUE %c %s\n", tmp->type, tmp->str);
+		if (tmp->value != 0)
+		ft_printf("%.16x %c %s\n", tmp->value, tmp->type, tmp->str);
+		else
+		ft_printf("                 %c %s\n",tmp->type, tmp->str);
 		tmp = tmp->next;
 	}
 }
 
-char sect(void)
+char get_corresponding_sect(uint8_t nsect, t_sect *sects)
 {
+	t_sect *tmp = sects;
+	while (tmp)
+	{
+		if (tmp->i == nsect)
+		{
+			if (!ft_strcmp(tmp->name, SECT_DATA))
+				return ('D');
+			else if (!ft_strcmp(tmp->name, SECT_BSS))
+				return ('B');
+			else if (!ft_strcmp(tmp->name, SECT_TEXT))
+				return ('T');
+			else
+				return ('S');
+		}
+		tmp = tmp->next;
+	}
 	return '?';
 }
 
-void	fill_list(int nsyms, int symoff, int stroff, char *ptr)
+t_elem *sort_elems(t_elem *elems)
+{
+	t_elem *tmp = elems;
+	t_elem *tmp2 = malloc(sizeof(t_elem));
+	t_elem *other = elems;
+
+	while (other)
+	{
+		tmp = elems;
+		while (tmp)
+		{
+			if (tmp->next && ft_strcmp(tmp->str, tmp->next->str) > 0)
+			{
+				tmp2->value = tmp->value;
+				tmp2->type = tmp->type;
+				tmp2->str = tmp->str;
+
+				tmp->value = tmp->next->value;
+				tmp->type = tmp->next->type;
+				tmp->str = tmp->next->str;
+
+				tmp->next->value = tmp2->value;
+				tmp->next->type = tmp2->type;
+				tmp->next->str = tmp2->str;
+			}
+			tmp = tmp->next;
+		}
+		other = other->next;
+	}
+	free(tmp2);
+
+	return (elems);
+}
+
+void	fill_list(int nsyms, int symoff, int stroff, char *ptr, t_sect *sects)
 {
 	int				i;
 	char			*stringtable;
@@ -43,12 +96,9 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr)
 	while (++i < nsyms)
 	{
 		elem = malloc(sizeof(t_elem));
-		int t = (uint8_t)(stringtable + array[i].n_type) & N_TYPE;
-		if (((uint8_t)(stringtable + array[i].n_sect)) != NO_SECT || t == N_SECT)
-		{
-			ft_printf("%d\n", (uint8_t)(stringtable + array[i].n_sect));
-			elem->type = sect();
-		}
+		int t = (uint8_t)(array[i].n_type) & N_TYPE;
+		if (((uint8_t)(array[i].n_sect)) != NO_SECT && t == N_SECT)
+			elem->type = get_corresponding_sect(((uint8_t)(array[i].n_sect)), sects);
 		else if (t == N_PBUD)
 			elem->type = 'U';
 		else if (t == N_UNDF)
@@ -62,11 +112,15 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr)
 			elem->type = 'I';
 		else
 			elem->type = '?';
-		if ((t & N_STAB) != 0)
-			elem->type = 'Z';
-		if ((t & N_EXT) == 0 && elem->type != '?')
-			elem->type = ft_tolower(elem->type);
 		elem->str = stringtable + array[i].n_un.n_strx;
+		if ((t & N_STAB) != 0 || elem->type == '?' || !ft_strcmp(elem->str, ""))
+		{
+			free(elem);
+			continue ;
+		}
+		if ((array[i].n_type & N_EXT) == 0 && elem->type != '?')
+			elem->type = ft_tolower(elem->type);
+		elem->value = array[i].n_value;
 		elem->next = NULL;
 		if (elems == NULL)
 		{
@@ -83,27 +137,72 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr)
 			tmp->next->prev = tmp;
 		}
 	}
+
+	elems = sort_elems(elems);
+
 	print_list(elems);
-	//ft_printf("%s\n" SECT_BSS);
 }
 
 
-void	add_section(struct segment_command_64 *lc, t_sect *sects)
+char *fill_name(char str[16])
+{
+	char *ret;
+	ret = malloc(sizeof(char) * 17);
+	int i = 0;
+	while (i < 16)
+	{
+		ret[i] = str[i];
+		i++;
+	}
+	ret[i] = 0;
+	return ret;
+
+
+}
+
+t_sect *	add_section(struct segment_command_64 *lc, t_sect *sects)
 {
 	struct section_64			*sec;
+	t_sect *section;
+	static int n = 1;
 	sec = (struct section_64*)(lc + sizeof(lc) / sizeof(void*));
 	int i = 0;
 	while (i < lc->nsects)
 	{
-		ft_printf("%s\n", sec->sectname);
-		sec = (struct section_64 *)(((void*)sec) + sizeof(struct section_64));
+		section = malloc(sizeof(t_sect));
+		section->name = (char*)(sec->sectname);
+		section->i = n;
+		n++;
+		section->next = NULL;
+		if (!sects)
+			sects = section;
+		else
+		{
+			t_sect *tmp = sects;
+			while (tmp->next)
+				tmp = tmp->next;
+			tmp->next = section;
+		}
+		sec++;
 		i++;
 	}
+	return sects;
 
 
 }
 
-void	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
+void	print_sections(t_sect *sects)
+{
+	t_sect *tmp = sects;
+	while (tmp)
+	{
+		ft_printf("%d\n", tmp->i);
+		tmp = tmp->next;
+	}
+
+}
+
+t_sect *	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 {
 	t_sect *sects = NULL;
 
@@ -112,10 +211,13 @@ void	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
 		{
-			add_section(lc, sects);
+			sects = add_section(lc, sects);
 		}
 		lc = (void*)lc + lc->cmdsize;
 	}
+
+	//print_sections(sects);
+	return sects;
 }
 
 void	handle_64(char *ptr)
@@ -131,14 +233,15 @@ void	handle_64(char *ptr)
 	lc = (void *)ptr + sizeof(*header);
 	i = 0;
 
-	get_sections(ptr, ncmds, (struct segment_command_64*)lc);
+
+	t_sect *sects = get_sections(ptr, ncmds, (struct segment_command_64*)lc);
 
 	while (++i < ncmds)
 	{
 		if (lc->cmd == LC_SYMTAB)
 		{
 			sym = (struct symtab_command*) lc;
-			fill_list(sym->nsyms, sym->symoff, sym->stroff, ptr);
+			fill_list(sym->nsyms, sym->symoff, sym->stroff, ptr, sects);
 			return ;
 		}
 		lc = (void*)lc + lc->cmdsize;
