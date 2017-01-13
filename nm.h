@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/12 16:39:25 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/13 18:30:37 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,15 @@ typedef struct s_sect
 	int		i;
 	struct s_sect *next;
 }				t_sect;
+
+typedef struct			s_offlist
+{
+	uint32_t			off;
+	uint32_t			strx;
+	struct s_offlist	*next;
+}						t_offlist;
+
+void	nm(void *ptr);
 
 
 #endif

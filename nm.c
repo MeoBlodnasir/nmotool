@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/12 19:10:00 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/13 18:29:50 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,10 @@ void	print_list(t_elem *elems)
 	tmp = elems;
 	while (tmp)
 	{
-		if (tmp->value != 0)
-		ft_printf("%.16x %c %s\n", tmp->value, tmp->type, tmp->str);
+		if (tmp->type != 'U')
+			ft_printf("%016x %c %s\n", tmp->value, tmp->type, tmp->str);
 		else
-		ft_printf("                 %c %s\n",tmp->type, tmp->str);
+			ft_printf("                 %c %s\n",tmp->type, tmp->str);
 		tmp = tmp->next;
 	}
 }
@@ -104,7 +104,8 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr, t_sect *sects)
 		else if (t == N_UNDF)
 		{
 			elem->type = 'U';
-			//sometimes C if value if set ( ??? )
+			if (array[i].n_value != 0)
+				elem->type = 'C';
 		}
 		else if (t == N_ABS)
 			elem->type = 'A';
@@ -113,13 +114,13 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr, t_sect *sects)
 		else
 			elem->type = '?';
 		elem->str = stringtable + array[i].n_un.n_strx;
-		if ((t & N_STAB) != 0 || elem->type == '?' || !ft_strcmp(elem->str, ""))
+		if ((array[i].n_type & N_EXT) == 0 && elem->type != '?')
+			elem->type = ft_tolower(elem->type);
+		if ((t & N_STAB) != 0 || elem->type == '?' || !ft_strcmp(elem->str, "") || elem->type == 'u')
 		{
 			free(elem);
 			continue ;
 		}
-		if ((array[i].n_type & N_EXT) == 0 && elem->type != '?')
-			elem->type = ft_tolower(elem->type);
 		elem->value = array[i].n_value;
 		elem->next = NULL;
 		if (elems == NULL)
@@ -219,6 +220,97 @@ void	handle_64(char *ptr)
 	}
 }
 
+uint32_t	swap(uint32_t val)
+{
+	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+	return (val << 16) | (val >> 16);
+}
+
+void handle_fat(char *ptr)
+{
+
+	struct fat_header	*fathead;
+	struct fat_arch		*arch;
+	uint32_t			i;
+	uint32_t			offset;
+
+	fathead = (void*)ptr;
+	i = fathead->nfat_arch;
+	i = swap(i);
+	arch = (void*)ptr + sizeof(fathead);
+	while (i)
+	{
+		if (swap(arch->cputype) == CPU_TYPE_X86_64)
+		{
+			offset = arch->offset;
+			nm(ptr + swap(offset));
+			return ;
+		}
+		arch += sizeof(arch) / sizeof(void*);
+		i--;
+	}
+
+}
+
+
+int		get_name_size(char *name)
+{
+	int size;
+	size = ft_atoi(ft_strchr(name, '/') + 1);
+	return size;
+
+}
+
+void	handle_archive(char *ptr)
+{
+	/*
+	struct ar_hdr	*arch;
+	struct ranlib	*ran;
+	t_offlist		*lst;
+	char			*test;
+	int				i;
+	int				size;
+	int				size_fuck;
+*/
+
+
+	struct ar_hdr	*arch;
+	struct ranlib	*ran;
+
+	
+
+	int i = 0;
+	arch = (void*)ptr + SARMAG;
+	ran = (void*)ptr + sizeof(*arch) + SARMAG;
+	int name_size = get_name_size(arch->ar_name);
+	ft_printf("name_size = %d\n", name_size);
+	ran = (void*)ptr + sizeof(*arch) + SARMAG + name_size;
+	int total_size = *((int*)(ran));
+	ran = (void*)ptr + sizeof(*arch) + SARMAG + name_size + sizeof(int);
+	ft_printf("nb of ranlib struct = %d\n", total_size / sizeof(struct ranlib));
+	while (i < (total_size / sizeof(struct ranlib)))
+	{
+		ft_printf((char*)(ran + total_size + ran[i].ran_un.ran_strx));
+		i++;
+	}
+//	ft_printf("size = %d\n", name_size);
+	//int  size = *((int*)ran + 10);
+//	ft_printf("size = %d\n", size);
+	
+	/*
+	size_fuck = catch_size(arch->ar_name);
+	test = (void*)ptr + sizeof(*arch) + SARMAG + size_fuck;
+	ran = (void*)ptr + sizeof(*arch) + SARMAG + size_fuck + 4;
+	size = *((int *)test);
+	lst = NULL;
+	size = size / sizeof(struct ranlib);
+	while (i < size)
+	{
+		lst = add_off(lst, ran[i].ran_off, ran[i].ran_un.ran_strx);
+		i++;
+	}*/
+//	browse_ar(lst, ptr, name);
+}
 
 
 void	nm(void *ptr)
@@ -232,11 +324,11 @@ void	nm(void *ptr)
 	}
 	else if (number == FAT_MAGIC || number == FAT_CIGAM)
 	{
-		//go_fat(ptr);
+		handle_fat(ptr);
 	}
 	else if (!ft_strncmp(ptr, ARMAG, SARMAG))
 	{
-		//go_archive(ptr, name);
+		handle_archive(ptr);
 	}
 	else
 		ft_putendl("Wrong binary format");
