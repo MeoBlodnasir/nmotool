@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/13 18:30:37 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/16 18:34:43 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ typedef struct			s_offlist
 	struct s_offlist	*next;
 }						t_offlist;
 
-void	nm(void *ptr);
+void	nm(void *ptr, char *file, uint32_t file_size, int multiple);
 
 
 #endif

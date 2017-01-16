@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/13 18:29:50 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/16 18:40:43 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,11 +144,16 @@ void	fill_list(int nsyms, int symoff, int stroff, char *ptr, t_sect *sects)
 	print_list(elems);
 }
 
-t_sect *	add_section(struct segment_command_64 *lc, t_sect *sects)
+t_sect *	add_section(struct segment_command_64 *lc, t_sect *sects, int mark)
 {
 	struct section_64			*sec;
 	t_sect *section;
 	static int n = 1;
+	if (mark)
+	{
+		n = 1;
+		return (NULL);
+	}
 	sec = (struct section_64*)(lc + sizeof(lc) / sizeof(void*));
 	int i = 0;
 	while (i < lc->nsects)
@@ -184,10 +189,11 @@ t_sect *	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
 		{
-			sects = add_section(lc, sects);
+			sects = add_section(lc, sects, 0);
 		}
 		lc = (void*)lc + lc->cmdsize;
 	}
+	add_section(lc, sects, 1);
 
 	return sects;
 }
@@ -243,7 +249,7 @@ void handle_fat(char *ptr)
 		if (swap(arch->cputype) == CPU_TYPE_X86_64)
 		{
 			offset = arch->offset;
-			nm(ptr + swap(offset));
+			nm(ptr + swap(offset), NULL, 0, 0);
 			return ;
 		}
 		arch += sizeof(arch) / sizeof(void*);
@@ -261,65 +267,117 @@ int		get_name_size(char *name)
 
 }
 
-void	handle_archive(char *ptr)
+/*
+t_offlist *add_object(t_offlist *lst, uint32_t off, uint32_t strx)
 {
-	/*
-	struct ar_hdr	*arch;
-	struct ranlib	*ran;
-	t_offlist		*lst;
-	char			*test;
-	int				i;
-	int				size;
-	int				size_fuck;
-*/
-
-
-	struct ar_hdr	*arch;
-	struct ranlib	*ran;
-
-	
-
-	int i = 0;
-	arch = (void*)ptr + SARMAG;
-	ran = (void*)ptr + sizeof(*arch) + SARMAG;
-	int name_size = get_name_size(arch->ar_name);
-	ft_printf("name_size = %d\n", name_size);
-	ran = (void*)ptr + sizeof(*arch) + SARMAG + name_size;
-	int total_size = *((int*)(ran));
-	ran = (void*)ptr + sizeof(*arch) + SARMAG + name_size + sizeof(int);
-	ft_printf("nb of ranlib struct = %d\n", total_size / sizeof(struct ranlib));
-	while (i < (total_size / sizeof(struct ranlib)))
+	t_offlist *new;
+	new = malloc(sizeof(t_offlist));
+	new->off = off;
+	new->strx = strx;
+	new->next = NULL;
+	if (!lst)
 	{
-		ft_printf((char*)(ran + total_size + ran[i].ran_un.ran_strx));
-		i++;
+		lst = new;
+		return (lst);
 	}
-//	ft_printf("size = %d\n", name_size);
-	//int  size = *((int*)ran + 10);
-//	ft_printf("size = %d\n", size);
-	
-	/*
-	size_fuck = catch_size(arch->ar_name);
-	test = (void*)ptr + sizeof(*arch) + SARMAG + size_fuck;
-	ran = (void*)ptr + sizeof(*arch) + SARMAG + size_fuck + 4;
-	size = *((int *)test);
-	lst = NULL;
-	size = size / sizeof(struct ranlib);
-	while (i < size)
+	else
 	{
-		lst = add_off(lst, ran[i].ran_off, ran[i].ran_un.ran_strx);
-		i++;
-	}*/
-//	browse_ar(lst, ptr, name);
+		t_offlist *tmp = lst;
+		while (tmp->next)
+		{
+			if (tmp->off == off)
+				return (lst);
+			tmp = tmp->next;
+		}
+		if (tmp->off != off)
+			tmp->next = new;
+	}
+	return (lst);
+}
+void	print_objects(struct s_offlist *lst, char *ptr, char *file)
+{
+	struct ar_hdr	*arch;
+	arch = (void*)ptr + SARMAG;
+	struct s_offlist *tmp = lst;
+	while (tmp)
+	{
+		arch = (void*)ptr + tmp->off;
+		ft_printf("\n%s(%s):\n", file, ft_strstr(arch->ar_name , ARFMAG) + ft_strlen(ARFMAG));
+		nm((char*)(arch + 1) + get_name_size(arch->ar_name) , NULL, 0);
+		tmp = tmp->next;
+	}
+}
+
+t_offlist *sort_objects(t_offlist *lst)
+{
+	t_offlist *tmp = lst;
+	t_offlist *tmp2 = malloc(sizeof(t_offlist));
+	t_offlist *other = lst;
+
+	while (other)
+	{
+		tmp = lst;
+		while (tmp)
+		{
+			if (tmp->next && tmp->off > tmp->next->off)
+			{
+				tmp2->off = tmp->off;
+				tmp2->strx = tmp->strx;
+
+				tmp->off = tmp->next->off;
+				tmp->strx = tmp->next->strx;
+
+				tmp->next->off = tmp2->off;
+				tmp->next->strx = tmp2->strx;
+			}
+			tmp = tmp->next;
+		}
+		other = other->next;
+	}
+	free(tmp2);
+
+	return (lst);
+}
+*/
+void	handle_archive(char *ptr, char *file, uint32_t file_size)
+{
+	struct ar_hdr	*arch;
+	t_offlist *lst = NULL;
+
+
+
+	arch = (void*)ptr + SARMAG;
+	int name_size = get_name_size(arch->ar_name);
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + name_size;
+	int total_size = *((int*)(arch));
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + name_size + sizeof(int) + total_size;
+	int stringtablesize = *((int*)(arch));
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + name_size + sizeof(int) + total_size + sizeof(int)+  stringtablesize;
+	struct ar_hdr *tmp = arch;
+	while (tmp < (struct ar_hdr*)(file_size + (void*)ptr))
+	{
+//		lst = add_object(lst, ran[i].ran_off, ran[i].ran_un.ran_strx);
+		ft_printf("\n%s(%s):\n", file, (char*)(ft_strstr(tmp->ar_name , ARFMAG) + ft_strlen(ARFMAG)));
+		nm((char*)(tmp + 1) + get_name_size(tmp->ar_name) , NULL, 0, 0);
+		tmp = (void*)tmp + ft_atoi(tmp->ar_size) + sizeof(struct ar_hdr);
+	}
+	/*
+	exit(0);
+	lst = sort_objects(lst);
+	print_objects(lst, ptr, file);
+	*/
 }
 
 
-void	nm(void *ptr)
+void	nm(void *ptr, char *file, uint32_t file_size, int multiple)
 {
 	unsigned int		number;
 
 	number = *(int *)ptr;
 	if (number == MH_MAGIC_64)
 	{
+		if (multiple)
+				ft_printf("\n%s:\n", file);
 		handle_64(ptr);
 	}
 	else if (number == FAT_MAGIC || number == FAT_CIGAM)
@@ -328,20 +386,19 @@ void	nm(void *ptr)
 	}
 	else if (!ft_strncmp(ptr, ARMAG, SARMAG))
 	{
-		handle_archive(ptr);
+		handle_archive(ptr, file, file_size);
 	}
 	else
 		ft_putendl("Wrong binary format");
 
 }
 
-int main(int ac, char **av)
+int	handle_file(char *file, int multiple)
 {
-	int			fd;
 	char		*ptr;
+	int			fd;
 	struct stat	buf;
-
-	if ((fd = open(av[1], O_RDONLY)) < 0)
+	if ((fd = open(file, O_RDONLY)) < 0)
 	{
 		ft_printf("Error opening binary\n");
 		exit(-1);
@@ -356,11 +413,42 @@ int main(int ac, char **av)
 		ft_printf("mmap failed\n");
 		return(-1);
 	}
-	nm(ptr);
+	nm(ptr, file, buf.st_size, multiple);
 	if (munmap(ptr, buf.st_size) < 0)
 	{
 		ft_printf("unmap failed\n");
 		exit(-1);
 	}
+	return (0);
+}
+
+int main(int ac, char **av)
+{
+	char *file;
+	int multiple = 0;
+
+	if (ac < 2)
+	{
+		file = ft_strdup("a.out");
+		handle_file(file, multiple);
+	}
+	else
+	{
+		int i = 1;
+		if (ac > 2)
+			multiple = 1;
+		while (i < ac)
+		{
+		//	if (ac > 2)
+		//		ft_printf("%s:\n", av[i]);
+			handle_file(av[i], multiple);
+		/*	if (ac > 2 && i != ac - 1)
+			{
+				ft_printf("\n");
+			}*/
+			i++;
+		}
+	}
+
 
 }
