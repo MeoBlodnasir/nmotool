@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/16 18:40:43 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 17:13:51 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,21 +14,24 @@
 
 void	print_list(t_elem *elems)
 {
-	t_elem *tmp;
+	t_elem	*tmp;
+
 	tmp = elems;
 	while (tmp)
 	{
 		if (tmp->type != 'U')
 			ft_printf("%016x %c %s\n", tmp->value, tmp->type, tmp->str);
 		else
-			ft_printf("                 %c %s\n",tmp->type, tmp->str);
+			ft_printf("                 %c %s\n", tmp->type, tmp->str);
 		tmp = tmp->next;
 	}
 }
 
-char get_corresponding_sect(uint8_t nsect, t_sect *sects)
+char	get_corresponding_sect(uint8_t nsect, t_sect *sects)
 {
-	t_sect *tmp = sects;
+	t_sect *tmp;
+
+	tmp = sects;
 	while (tmp)
 	{
 		if (tmp->i == nsect)
@@ -44,182 +47,219 @@ char get_corresponding_sect(uint8_t nsect, t_sect *sects)
 		}
 		tmp = tmp->next;
 	}
-	return '?';
+	return ('?');
 }
 
-t_elem *sort_elems(t_elem *elems)
+void	switch_elems(t_elem **tmp)
 {
-	t_elem *tmp = elems;
-	t_elem *tmp2 = malloc(sizeof(t_elem));
-	t_elem *other = elems;
+	t_elem *tmp2;
 
+	tmp2 = malloc(sizeof(t_elem));
+	tmp2->value = (*tmp)->value;
+	tmp2->type = (*tmp)->type;
+	tmp2->str = (*tmp)->str;
+	(*tmp)->value = (*tmp)->next->value;
+	(*tmp)->type = (*tmp)->next->type;
+	(*tmp)->str = (*tmp)->next->str;
+	(*tmp)->next->value = tmp2->value;
+	(*tmp)->next->type = tmp2->type;
+	(*tmp)->next->str = tmp2->str;
+}
+
+t_elem	*sort_elems(t_elem *elems)
+{
+	t_elem *tmp;
+	t_elem *tmp2;
+	t_elem *other;
+
+	tmp = elems;
+	tmp2 = malloc(sizeof(t_elem));
+	other = elems;
 	while (other)
 	{
 		tmp = elems;
 		while (tmp)
 		{
 			if (tmp->next && ft_strcmp(tmp->str, tmp->next->str) > 0)
-			{
-				tmp2->value = tmp->value;
-				tmp2->type = tmp->type;
-				tmp2->str = tmp->str;
-
-				tmp->value = tmp->next->value;
-				tmp->type = tmp->next->type;
-				tmp->str = tmp->next->str;
-
-				tmp->next->value = tmp2->value;
-				tmp->next->type = tmp2->type;
-				tmp->next->str = tmp2->str;
-			}
+				switch_elems(&tmp);
 			tmp = tmp->next;
 		}
 		other = other->next;
 	}
 	free(tmp2);
-
 	return (elems);
 }
 
-void	fill_list(int nsyms, int symoff, int stroff, char *ptr, t_sect *sects)
+char	get_elem_type(struct nlist_64 *array, int i, int t)
+{
+	if (t == N_PBUD)
+		return ('U');
+	else if (t == N_UNDF)
+	{
+		if (array[i].n_value != 0)
+			return ('C');
+		else
+			return ('U');
+	}
+	else if (t == N_ABS)
+		return ('A');
+	else if (t == N_INDR)
+		return ('I');
+	else
+		return ('?');
+}
+
+t_elem	*add_elem(t_elem *elems, t_elem *elem)
+{
+	t_elem *tmp;
+
+	if (elems == NULL)
+	{
+		elems = elem;
+		elems->next = NULL;
+		elems->prev = NULL;
+	}
+	else
+	{
+		tmp = elems;
+		while (tmp->next)
+			tmp = tmp->next;
+		tmp->next = elem;
+		tmp->next->prev = tmp;
+	}
+	return (elems);
+}
+
+t_elem	*fill_elem(struct nlist_64 *array, int i, t_sect *sects,
+		char *stringtable)
+{
+	t_elem	*elem;
+	int		t;
+
+	elem = malloc(sizeof(t_elem));
+	t = (uint8_t)(array[i].n_type) & N_TYPE;
+	if (((uint8_t)(array[i].n_sect)) != NO_SECT && t == N_SECT)
+		elem->type =
+			get_corresponding_sect(((uint8_t)(array[i].n_sect)), sects);
+	else
+		elem->type = get_elem_type(array, i, t);
+	elem->str = stringtable + array[i].n_un.n_strx;
+	if ((array[i].n_type & N_EXT) == 0 && elem->type != '?')
+		elem->type = ft_tolower(elem->type);
+	if ((t & N_STAB) != 0 || elem->type == '?' ||
+			!ft_strcmp(elem->str, "") || elem->type == 'u')
+	{
+		free(elem);
+		return (NULL);
+	}
+	return (elem);
+}
+
+void	fill_list(struct symtab_command *sym, char *ptr, t_sect *sects)
 {
 	int				i;
 	char			*stringtable;
 	struct nlist_64	*array;
-	t_elem *elems = NULL;
-	t_elem *elem;
-	t_elem *tmp;
+	t_elem			*elem;
+	t_elem			*elems;
 
-	array = (void*)ptr + symoff;
-	stringtable = (void*)ptr + stroff;
+	elems = NULL;
+	array = (void*)ptr + sym->symoff;
+	stringtable = (void*)ptr + sym->stroff;
 	i = -1;
-	while (++i < nsyms)
+	while (++i < sym->nsyms)
 	{
-		elem = malloc(sizeof(t_elem));
-		int t = (uint8_t)(array[i].n_type) & N_TYPE;
-		if (((uint8_t)(array[i].n_sect)) != NO_SECT && t == N_SECT)
-			elem->type = get_corresponding_sect(((uint8_t)(array[i].n_sect)), sects);
-		else if (t == N_PBUD)
-			elem->type = 'U';
-		else if (t == N_UNDF)
-		{
-			elem->type = 'U';
-			if (array[i].n_value != 0)
-				elem->type = 'C';
-		}
-		else if (t == N_ABS)
-			elem->type = 'A';
-		else if (t == N_INDR)
-			elem->type = 'I';
-		else
-			elem->type = '?';
-		elem->str = stringtable + array[i].n_un.n_strx;
-		if ((array[i].n_type & N_EXT) == 0 && elem->type != '?')
-			elem->type = ft_tolower(elem->type);
-		if ((t & N_STAB) != 0 || elem->type == '?' || !ft_strcmp(elem->str, "") || elem->type == 'u')
-		{
-			free(elem);
+		elem = fill_elem(array, i, sects, stringtable);
+		if (!elem)
 			continue ;
-		}
 		elem->value = array[i].n_value;
 		elem->next = NULL;
-		if (elems == NULL)
-		{
-			elems = elem;
-			elems->next = NULL;
-			elems->prev = NULL;
-		}
-		else
-		{
-			tmp = elems;
-			while (tmp->next)
-				tmp = tmp->next;
-			tmp->next = elem;
-			tmp->next->prev = tmp;
-		}
+		elems = add_elem(elems, elem);
 	}
-
 	elems = sort_elems(elems);
-
 	print_list(elems);
 }
 
-t_sect *	add_section(struct segment_command_64 *lc, t_sect *sects, int mark)
+t_sect	*add_sec_tolist(int n, char *name, t_sect *sects)
 {
-	struct section_64			*sec;
-	t_sect *section;
-	static int n = 1;
+	t_sect	*section;
+	t_sect	*tmp;
+
+	section = malloc(sizeof(t_sect));
+	section->name = name;
+	section->i = n;
+	section->next = NULL;
+	if (!sects)
+		sects = section;
+	else
+	{
+		tmp = sects;
+		while (tmp->next)
+			tmp = tmp->next;
+		tmp->next = section;
+	}
+	return (sects);
+}
+
+t_sect	*add_section(struct segment_command_64 *lc, t_sect *sects, int mark)
+{
+	struct section_64	*sec;
+	static int			n = 1;
+	int					i;
+
 	if (mark)
 	{
 		n = 1;
 		return (NULL);
 	}
 	sec = (struct section_64*)(lc + sizeof(lc) / sizeof(void*));
-	int i = 0;
+	i = 0;
 	while (i < lc->nsects)
 	{
-		section = malloc(sizeof(t_sect));
-		section->name = (char*)(sec->sectname);
-		section->i = n;
+		sects = add_sec_tolist(n, (char*)sec->sectname, sects);
 		n++;
-		section->next = NULL;
-		if (!sects)
-			sects = section;
-		else
-		{
-			t_sect *tmp = sects;
-			while (tmp->next)
-				tmp = tmp->next;
-			tmp->next = section;
-		}
 		sec++;
 		i++;
 	}
-	return sects;
-
-
+	return (sects);
 }
 
-t_sect *	get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
+t_sect	*get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 {
-	t_sect *sects = NULL;
+	t_sect	*sects;
+	int		i;
 
-	int i = -1;
+	sects = NULL;
+	i = -1;
 	while (++i < ncmds)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
-		{
 			sects = add_section(lc, sects, 0);
-		}
 		lc = (void*)lc + lc->cmdsize;
 	}
 	add_section(lc, sects, 1);
-
-	return sects;
+	return (sects);
 }
 
 void	handle_64(char *ptr)
 {
-	int						ncmds;
-	int						i;
+	t_norm					norm;
 	struct mach_header_64	*header;
 	struct load_command		*lc;
 	struct symtab_command	*sym;
+	t_sect					*sects;
 
 	header = (struct mach_header_64 *)ptr;
-	ncmds = header->ncmds;
+	norm.ncmds = header->ncmds;
 	lc = (void *)ptr + sizeof(*header);
-	i = 0;
-
-
-	t_sect *sects = get_sections(ptr, ncmds, (struct segment_command_64*)lc);
-
-	while (++i < ncmds)
+	norm.i = 0;
+	sects = get_sections(ptr, norm.ncmds, (struct segment_command_64*)lc);
+	while (++norm.i < norm.ncmds)
 	{
 		if (lc->cmd == LC_SYMTAB)
 		{
-			sym = (struct symtab_command*) lc;
-			fill_list(sym->nsyms, sym->symoff, sym->stroff, ptr, sects);
+			sym = (struct symtab_command*)lc;
+			fill_list(sym, ptr, sects);
 			return ;
 		}
 		lc = (void*)lc + lc->cmdsize;
@@ -232,9 +272,8 @@ uint32_t	swap(uint32_t val)
 	return (val << 16) | (val >> 16);
 }
 
-void handle_fat(char *ptr)
+void	handle_fat(char *ptr)
 {
-
 	struct fat_header	*fathead;
 	struct fat_arch		*arch;
 	uint32_t			i;
@@ -255,119 +294,41 @@ void handle_fat(char *ptr)
 		arch += sizeof(arch) / sizeof(void*);
 		i--;
 	}
-
 }
-
 
 int		get_name_size(char *name)
 {
 	int size;
+
 	size = ft_atoi(ft_strchr(name, '/') + 1);
-	return size;
-
+	return (size);
 }
 
-/*
-t_offlist *add_object(t_offlist *lst, uint32_t off, uint32_t strx)
-{
-	t_offlist *new;
-	new = malloc(sizeof(t_offlist));
-	new->off = off;
-	new->strx = strx;
-	new->next = NULL;
-	if (!lst)
-	{
-		lst = new;
-		return (lst);
-	}
-	else
-	{
-		t_offlist *tmp = lst;
-		while (tmp->next)
-		{
-			if (tmp->off == off)
-				return (lst);
-			tmp = tmp->next;
-		}
-		if (tmp->off != off)
-			tmp->next = new;
-	}
-	return (lst);
-}
-void	print_objects(struct s_offlist *lst, char *ptr, char *file)
-{
-	struct ar_hdr	*arch;
-	arch = (void*)ptr + SARMAG;
-	struct s_offlist *tmp = lst;
-	while (tmp)
-	{
-		arch = (void*)ptr + tmp->off;
-		ft_printf("\n%s(%s):\n", file, ft_strstr(arch->ar_name , ARFMAG) + ft_strlen(ARFMAG));
-		nm((char*)(arch + 1) + get_name_size(arch->ar_name) , NULL, 0);
-		tmp = tmp->next;
-	}
-}
-
-t_offlist *sort_objects(t_offlist *lst)
-{
-	t_offlist *tmp = lst;
-	t_offlist *tmp2 = malloc(sizeof(t_offlist));
-	t_offlist *other = lst;
-
-	while (other)
-	{
-		tmp = lst;
-		while (tmp)
-		{
-			if (tmp->next && tmp->off > tmp->next->off)
-			{
-				tmp2->off = tmp->off;
-				tmp2->strx = tmp->strx;
-
-				tmp->off = tmp->next->off;
-				tmp->strx = tmp->next->strx;
-
-				tmp->next->off = tmp2->off;
-				tmp->next->strx = tmp2->strx;
-			}
-			tmp = tmp->next;
-		}
-		other = other->next;
-	}
-	free(tmp2);
-
-	return (lst);
-}
-*/
 void	handle_archive(char *ptr, char *file, uint32_t file_size)
 {
 	struct ar_hdr	*arch;
-	t_offlist *lst = NULL;
+	t_offlist		*lst;
+	int				size;
+	struct ar_hdr	*tmp;
 
-
-
+	lst = NULL;
 	arch = (void*)ptr + SARMAG;
-	int name_size = get_name_size(arch->ar_name);
-	arch = (void*)ptr + sizeof(*arch) + SARMAG + name_size;
-	int total_size = *((int*)(arch));
-	arch = (void*)ptr + sizeof(*arch) + SARMAG + name_size + sizeof(int) + total_size;
-	int stringtablesize = *((int*)(arch));
-	arch = (void*)ptr + sizeof(*arch) + SARMAG + name_size + sizeof(int) + total_size + sizeof(int)+  stringtablesize;
-	struct ar_hdr *tmp = arch;
+	size = get_name_size(arch->ar_name);
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + size;
+	size += *((int*)(arch));
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + sizeof(int);
+	size += *((int*)(arch));
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + size +
+		sizeof(int) + sizeof(int);
+	tmp = arch;
 	while (tmp < (struct ar_hdr*)(file_size + (void*)ptr))
 	{
-//		lst = add_object(lst, ran[i].ran_off, ran[i].ran_un.ran_strx);
-		ft_printf("\n%s(%s):\n", file, (char*)(ft_strstr(tmp->ar_name , ARFMAG) + ft_strlen(ARFMAG)));
-		nm((char*)(tmp + 1) + get_name_size(tmp->ar_name) , NULL, 0, 0);
+		ft_printf("\n%s(%s):\n", file, (char*)(ft_strstr(tmp->ar_name,
+						ARFMAG) + ft_strlen(ARFMAG)));
+		nm((char*)(tmp + 1) + get_name_size(tmp->ar_name), NULL, 0, 0);
 		tmp = (void*)tmp + ft_atoi(tmp->ar_size) + sizeof(struct ar_hdr);
 	}
-	/*
-	exit(0);
-	lst = sort_objects(lst);
-	print_objects(lst, ptr, file);
-	*/
 }
-
 
 void	nm(void *ptr, char *file, uint32_t file_size, int multiple)
 {
@@ -377,7 +338,7 @@ void	nm(void *ptr, char *file, uint32_t file_size, int multiple)
 	if (number == MH_MAGIC_64)
 	{
 		if (multiple)
-				ft_printf("\n%s:\n", file);
+			ft_printf("\n%s:\n", file);
 		handle_64(ptr);
 	}
 	else if (number == FAT_MAGIC || number == FAT_CIGAM)
@@ -390,29 +351,39 @@ void	nm(void *ptr, char *file, uint32_t file_size, int multiple)
 	}
 	else
 		ft_putendl("Wrong binary format");
+}
 
+char	*get_ptr(char *ptr, char *file, struct stat *buf)
+{
+	int			fd;
+
+	if ((fd = open(file, O_RDONLY)) < 0)
+	{
+		ft_printf("Error opening binary\n");
+		return (NULL);
+	}
+	if (fstat(fd, buf) < 0)
+	{
+		ft_printf("fstat failed\n");
+		return (NULL);
+	}
+	if ((ptr = mmap(0, buf->st_size, PROT_READ, MAP_PRIVATE, fd,
+					0)) == MAP_FAILED)
+	{
+		ft_printf("mmap failed\n");
+		return (NULL);
+	}
+	return (ptr);
 }
 
 int	handle_file(char *file, int multiple)
 {
 	char		*ptr;
-	int			fd;
 	struct stat	buf;
-	if ((fd = open(file, O_RDONLY)) < 0)
-	{
-		ft_printf("Error opening binary\n");
-		exit(-1);
-	}
-	if (fstat(fd, &buf) < 0)
-	{
-		ft_printf("fstat failed\n");
-		exit(-1);
-	}
-	if ((ptr = mmap(0, buf.st_size, PROT_READ, MAP_PRIVATE,fd, 0)) == MAP_FAILED)
-	{
-		ft_printf("mmap failed\n");
-		return(-1);
-	}
+
+	ptr = get_ptr(ptr, file, &buf);
+	if (!ptr)
+		exit(0);
 	nm(ptr, file, buf.st_size, multiple);
 	if (munmap(ptr, buf.st_size) < 0)
 	{
@@ -422,11 +393,13 @@ int	handle_file(char *file, int multiple)
 	return (0);
 }
 
-int main(int ac, char **av)
+int	main(int ac, char **av)
 {
-	char *file;
-	int multiple = 0;
+	char	*file;
+	int		multiple;
+	int		i;
 
+	multiple = 0;
 	if (ac < 2)
 	{
 		file = ft_strdup("a.out");
@@ -434,21 +407,13 @@ int main(int ac, char **av)
 	}
 	else
 	{
-		int i = 1;
+		i = 1;
 		if (ac > 2)
 			multiple = 1;
 		while (i < ac)
 		{
-		//	if (ac > 2)
-		//		ft_printf("%s:\n", av[i]);
 			handle_file(av[i], multiple);
-		/*	if (ac > 2 && i != ac - 1)
-			{
-				ft_printf("\n");
-			}*/
 			i++;
 		}
 	}
-
-
 }
