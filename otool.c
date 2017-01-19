@@ -6,11 +6,11 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 17:55:32 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 18:27:22 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "nm.h"
+#include "otool.h"
 
 void	print_list(t_elem *elems)
 {
