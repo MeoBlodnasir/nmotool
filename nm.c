@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:24:57 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 18:51:20 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,6 +88,7 @@ int		handle_file(char *file, int multiple)
 	char		*ptr;
 	struct stat	buf;
 
+	ptr = NULL;
 	ptr = get_ptr(ptr, file, &buf);
 	if (!ptr)
 		exit(0);

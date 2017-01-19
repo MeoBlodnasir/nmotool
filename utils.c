@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:21:25 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:26:01 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 18:58:09 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ void		fill_list(struct symtab_command *sym, char *ptr, t_sect *sects)
 	array = (void*)ptr + sym->symoff;
 	stringtable = (void*)ptr + sym->stroff;
 	i = -1;
-	while (++i < sym->nsyms)
+	while (++i < (int)sym->nsyms)
 	{
 		elem = fill_elem(array, i, sects, stringtable);
 		if (!elem)
@@ -82,6 +82,7 @@ int			get_name_size(char *name)
 	int size;
 
 	size = ft_atoi(ft_strchr(name, '/') + 1);
+	ft_printf("SIZE = %d\n", size);
 	return (size);
 }
 

@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:33:41 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 18:48:16 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,7 @@ void	nm(t_file f, int multiple, int ch)
 	unsigned int		number;
 
 	number = *(int *)f.ptr;
+	(void)multiple;
 	if (number == MH_MAGIC_64)
 	{
 		if (ch)
@@ -99,6 +100,7 @@ int		handle_file(char *file, int multiple)
 	struct stat	buf;
 	t_file		f;
 
+	ptr = NULL;
 	ptr = get_ptr(ptr, file, &buf);
 	if (!ptr)
 		exit(0);

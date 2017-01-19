@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:32:07 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:32:40 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 18:48:55 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,10 @@ void	add_section(struct segment_command_64 *lc, int mark, char *ptr)
 	struct section_64	*sec;
 	int					j;
 
+	(void)mark;
 	sec = (struct section_64*)(lc + sizeof(lc) / sizeof(void*));
 	j = -1;
-	while (++j < lc->nsects)
+	while (++j < (int)lc->nsects)
 	{
 		if (!ft_strncmp(sec->sectname, SECT_TEXT, sizeof(SECT_TEXT)))
 			print_otool(sec, ptr);
@@ -48,7 +49,6 @@ void	handle_64(char *ptr)
 	t_norm					norm;
 	struct mach_header_64	*header;
 	struct load_command		*lc;
-	struct symtab_command	*sym;
 	t_sect					*sects;
 
 	header = (struct mach_header_64 *)ptr;

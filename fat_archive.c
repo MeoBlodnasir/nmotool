@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:23:11 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:23:57 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 19:07:28 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,11 +39,9 @@ void	handle_fat(char *ptr)
 void	handle_archive(char *ptr, char *file, uint32_t file_size)
 {
 	struct ar_hdr	*arch;
-	t_offlist		*lst;
 	int				size;
 	struct ar_hdr	*tmp;
 
-	lst = NULL;
 	arch = (void*)ptr + SARMAG;
 	size = get_name_size(arch->ar_name);
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size;
