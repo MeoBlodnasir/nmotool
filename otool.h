@@ -6,12 +6,12 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 17:57:31 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/19 18:35:38 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef NM_H
-# define NM_H
+#ifndef OTOOL_H
+# define OTOOL_H
 # include <sys/mman.h>
 # include <mach-o/loader.h>
 # include <mach-o/nlist.h>
@@ -57,5 +57,10 @@ typedef struct			s_file
 }						t_file;
 
 void					nm(t_file f, int multiple, int ch);
+char					*get_ptr(char *ptr, char *file, struct stat *buf);
+int						get_name_size(char *name);
+uint32_t				swap(uint32_t val);
+void					print_otool(struct section_64 *sec, char *ptr);
+void					handle_64(char *ptr);
 
 #endif
