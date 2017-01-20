@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:04:28 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:25:20 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/20 17:50:50 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ char	get_elem_type(struct nlist_64 *array, int i, int t)
 		return ('U');
 	else if (t == N_UNDF)
 	{
-		if (array[i].n_value != 0)
+		if (swap_64(array[i].n_value) != 0)
 			return ('C');
 		else
 			return ('U');

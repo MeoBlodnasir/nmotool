@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:21:25 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/20 17:22:11 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/20 18:30:14 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ t_elem		*fill_elem(struct nlist_64 *array, int i, t_sect *sects,
 			get_corresponding_sect(((uint8_t)(array[i].n_sect)), sects);
 	else
 		elem->type = get_elem_type(array, i, t);
-	elem->str = stringtable + array[i].n_un.n_strx;
+	elem->str = stringtable + swap_32(array[i].n_un.n_strx);
 	if ((array[i].n_type & N_EXT) == 0 && elem->type != '?')
 		elem->type = ft_tolower(elem->type);
 	if ((t & N_STAB) != 0 || elem->type == '?' ||
@@ -61,15 +61,15 @@ void		fill_list(struct symtab_command *sym, char *ptr, t_sect *sects)
 	t_elem			*elems;
 
 	elems = NULL;
-	array = (void*)ptr + sym->symoff;
-	stringtable = (void*)ptr + sym->stroff;
+	array = (void*)ptr + swap_32(sym->symoff);
+	stringtable = (void*)ptr + swap_32(sym->stroff);
 	i = -1;
-	while (++i < (int)sym->nsyms)
+	while (++i < (int)swap_32(sym->nsyms))
 	{
 		elem = fill_elem(array, i, sects, stringtable);
 		if (!elem)
 			continue ;
-		elem->value = array[i].n_value;
+		elem->value = swap_64(array[i].n_value);
 		elem->next = NULL;
 		elems = add_elem(elems, elem);
 	}
