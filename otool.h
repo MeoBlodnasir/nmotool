@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/20 19:19:07 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/23 15:53:29 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ typedef struct			s_file
 	uint32_t			size;
 }						t_file;
 
-void					nm(t_file f, int multiple, int ch);
+void					otool(t_file f, int ch);
 char					*get_ptr(char *ptr, char *file, struct stat *buf);
 int						get_name_size(char *name);
 uint32_t				swap(uint32_t val);
@@ -71,5 +71,12 @@ uint32_t		swap_32_fat(uint32_t i);
 int64_t		swap_64_fat(int64_t i);
 void	handle_32(char *ptr);
 void		print_otool_32(struct section *sec, char *ptr);
+void	handle_archive(char *ptr, char *file, uint32_t file_size);
+void	handle_fat(t_file f);
+int	set_swap(int i);
+int				set_swap_fat(int i);
+uint32_t	swap(uint32_t val);
+uint32_t		swap_32(uint32_t i);
+int64_t		swap_endian_64(int64_t i);
 
 #endif
