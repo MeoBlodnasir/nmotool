@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:07:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/20 18:21:33 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/23 14:52:29 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@
 t_sect	*add_section_32(struct segment_command *lc, t_sect *sects, int mark)
 {
 	struct section	*sec;
-	static int			n = 1;
-	int					i;
+	static int		n = 1;
+	int				i;
 
 	if (mark)
 	{

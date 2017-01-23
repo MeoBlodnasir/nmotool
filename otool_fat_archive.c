@@ -1,33 +1,35 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   fat_archive.c                                      :+:      :+:    :+:   */
+/*   otool_fat_archive.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2017/01/19 18:23:11 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 14:31:21 by aduban           ###   ########.fr       */
+/*   Created: 2017/01/23 15:48:49 by aduban            #+#    #+#             */
+/*   Updated: 2017/01/23 15:50:33 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "nm.h"
+#include "otool.h"
 
-void	handle_fat(char *ptr, int file_size, char *file)
+void			handle_fat(t_file f)
 {
 	struct fat_header	*fathead;
 	struct fat_arch		*arch;
 	uint32_t			i;
 	uint32_t			offset;
 
-	fathead = (void*)ptr;
-	i = swap_32_fat(fathead->nfat_arch);
-	arch = (void*)ptr + sizeof(fathead);
+	fathead = (void*)f.ptr;
+	i = fathead->nfat_arch;
+	i = swap(i);
+	arch = (void*)f.ptr + sizeof(fathead);
 	while (i)
 	{
-		if (swap_32_fat(arch->cputype) == CPU_TYPE_X86_64)
+		if (swap(arch->cputype) == CPU_TYPE_X86_64)
 		{
-			offset = swap_32_fat(arch->offset);
-			nm(ptr + offset, file, file_size, 0);
+			offset = arch->offset;
+			f.ptr = f.ptr + swap(offset);
+			otool(f, 0);
 			return ;
 		}
 		arch += sizeof(arch) / sizeof(void*);
@@ -35,12 +37,10 @@ void	handle_fat(char *ptr, int file_size, char *file)
 	}
 }
 
-void	handle_archive(char *ptr, char *file, uint32_t file_size)
+struct ar_hdr	*get_sizes(char *ptr)
 {
-	struct ar_hdr	*arch;
 	int				size;
-	struct ar_hdr	*tmp;
-	char			*str;
+	struct ar_hdr	*arch;
 
 	arch = (void*)ptr + SARMAG;
 	size = get_name_size(arch->ar_name);
@@ -48,18 +48,34 @@ void	handle_archive(char *ptr, char *file, uint32_t file_size)
 	size += *((int*)(arch));
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + sizeof(int);
 	size += *((int*)(arch));
-	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + (2 * sizeof(int));
+	arch = (void*)ptr + sizeof(*arch) + SARMAG + size +
+		sizeof(int) + sizeof(int);
+	return (arch);
+}
+
+void			handle_archive(char *ptr, char *file, uint32_t file_size)
+{
+	struct ar_hdr	*arch;
+	t_offlist		*lst;
+	struct ar_hdr	*tmp;
+	t_file			f;
+	char			*str;
+
+	lst = NULL;
+	arch = get_sizes(ptr);
 	tmp = arch;
 	while (tmp < (struct ar_hdr*)(file_size + (void*)ptr))
 	{
 		str = (char*)(ft_strstr(tmp->ar_name, ARFMAG) + ft_strlen(ARFMAG));
 		if (ft_strcmp(str, SYMDEF) != 0 && ft_strcmp(str, SYMDEF_SORTED) != 0)
 		{
-			ft_printf("\n%s(%s):\n", file, (char*)(ft_strstr(tmp->ar_name,
+			ft_printf("%s(%s):\n", file, (char*)(ft_strstr(tmp->ar_name,
 							ARFMAG) + ft_strlen(ARFMAG)));
-			nm((char*)(tmp + 1) + get_name_size(tmp->ar_name),
-					NULL, file_size, 0);
+			f.ptr = (char*)(tmp + 1) + get_name_size(tmp->ar_name);
+			otool(f, 0);
+			tmp = (void*)tmp + ft_atoi(tmp->ar_size) + sizeof(struct ar_hdr);
 		}
-		tmp = (void*)tmp + ft_atoi(tmp->ar_size) + sizeof(struct ar_hdr);
+		else
+			exit(0);
 	}
 }

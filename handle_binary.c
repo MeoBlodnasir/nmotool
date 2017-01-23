@@ -1,47 +1,40 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   otool_sections.c                                   :+:      :+:    :+:   */
+/*   handle_binary.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2017/01/19 18:32:07 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 14:32:01 by aduban           ###   ########.fr       */
+/*   Created: 2017/01/23 15:46:09 by aduban            #+#    #+#             */
+/*   Updated: 2017/01/23 15:46:48 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "otool.h"
+#include "nm.h"
 
-void	add_section_32(struct segment_command *lc, int mark, char *ptr)
+void	handle_64(char *ptr)
 {
-	struct section	*sec;
-	int				j;
+	t_norm					norm;
+	struct mach_header_64	*header;
+	struct load_command		*lc;
+	struct symtab_command	*sym;
+	t_sect					*sects;
 
-	(void)mark;
-	sec = (struct section*)(lc + sizeof(lc) / sizeof(void*));
-	j = -1;
-	while (++j < (int)swap_32(lc->nsects))
+	header = (struct mach_header_64 *)ptr;
+	norm.ncmds = swap_32(header->ncmds);
+	lc = (void *)ptr + sizeof(*header);
+	norm.i = 0;
+	sects = get_sections(ptr, norm.ncmds, (struct segment_command_64*)lc);
+	while (++norm.i < norm.ncmds)
 	{
-		if (!ft_strncmp(sec->sectname, SECT_TEXT, sizeof(SECT_TEXT)))
-			print_otool_32(sec, ptr);
-		sec++;
-	}
-}
-
-t_sect	*get_sections_32(char *ptr, int ncmds, struct segment_command *lc)
-{
-	t_sect	*sects;
-	int		i;
-
-	sects = NULL;
-	i = -1;
-	while (++i < ncmds)
-	{
-		if (swap_32(lc->cmd) == LC_SEGMENT)
-			add_section_32(lc, 0, ptr);
+		if (swap_32(lc->cmd) == LC_SYMTAB)
+		{
+			sym = (struct symtab_command*)lc;
+			fill_list(sym, ptr, sects);
+			return ;
+		}
 		lc = (void*)lc + swap_32(lc->cmdsize);
 	}
-	return (sects);
 }
 
 void	handle_32(char *ptr)
@@ -49,12 +42,23 @@ void	handle_32(char *ptr)
 	t_norm					norm;
 	struct mach_header		*header;
 	struct load_command		*lc;
+	struct symtab_command	*sym;
 	t_sect					*sects;
 
 	header = (struct mach_header *)ptr;
 	norm.ncmds = header->ncmds;
 	lc = (void *)ptr + sizeof(*header);
 	norm.i = 0;
+	sects = NULL;
 	sects = get_sections_32(ptr, norm.ncmds, (struct segment_command*)lc);
-	return ;
+	while (++norm.i < norm.ncmds)
+	{
+		if (swap_32(lc->cmd) == LC_SYMTAB)
+		{
+			sym = (struct symtab_command*)lc;
+			fill_list_32(sym, ptr, sects);
+			return ;
+		}
+		lc = (void*)lc + swap_32(lc->cmdsize);
+	}
 }
