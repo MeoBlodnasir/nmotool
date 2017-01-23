@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:32:07 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/19 18:48:55 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/23 16:37:00 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,10 @@ void	add_section(struct segment_command_64 *lc, int mark, char *ptr)
 	while (++j < (int)lc->nsects)
 	{
 		if (!ft_strncmp(sec->sectname, SECT_TEXT, sizeof(SECT_TEXT)))
+		{
+			ft_printf("Contents of (__TEXT,__text) section\n");
 			print_otool(sec, ptr);
+		}
 		sec++;
 	}
 }
@@ -38,7 +41,9 @@ t_sect	*get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 	while (++i < ncmds)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
+		{
 			add_section(lc, 0, ptr);
+		}
 		lc = (void*)lc + lc->cmdsize;
 	}
 	return (sects);

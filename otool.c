@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 15:57:35 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/23 16:37:07 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,20 +20,17 @@ void	pre_64(unsigned int number, int ch, t_file f)
 		set_swap(0);
 	if (ch)
 		ft_printf("%s:\n", f.file);
-	ft_printf("Contents of (__TEXT,__text) section\n");
 	handle_64(f.ptr);
 }
 
 void	pre_fat(unsigned int number, int ch, t_file f)
 {
-	ft_printf("here\n");
 	if (number == FAT_CIGAM)
 		set_swap_fat(1);
 	else
 		set_swap_fat(0);
 	if (ch)
 		ft_printf("%s:\n", f.file);
-	ft_printf("Contents of (__TEXT,__text) section\n");
 	handle_fat(f);
 }
 
@@ -54,7 +51,6 @@ void	otool(t_file f, int ch)
 			set_swap_fat(0);
 		if (ch)
 			ft_printf("%s:\n", f.file);
-		ft_printf("Contents of (__TEXT,__text) section\n");
 		handle_32(f.ptr);
 	}
 	else if (!ft_strncmp(f.ptr, ARMAG, SARMAG))
