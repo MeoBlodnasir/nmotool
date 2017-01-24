@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 16:51:18 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/23 17:06:09 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,21 +31,15 @@ void	nm(void *ptr, char *file, uint32_t file_size, int multiple)
 	if (number == MH_MAGIC_64 || number == MH_CIGAM_64)
 		pre_64(number, multiple, ptr, file);
 	else if (number == FAT_MAGIC || number == FAT_CIGAM)
-	{
-		if (number == FAT_CIGAM)
-			set_swap_fat(1);
-		else
-			set_swap_fat(0);
-		handle_fat(ptr, file_size, file);
-	}
+		pre_fat(number, ptr, file_size, file);
 	else if (number == MH_MAGIC || number == MH_CIGAM)
 	{
 		if (number == FAT_CIGAM)
 			set_swap_fat(1);
 		else
 			set_swap_fat(0);
-	if (multiple)
-		ft_printf("\n%s:\n", file);
+		if (multiple)
+			ft_printf("\n%s:\n", file);
 		handle_32(ptr);
 	}
 	else if (!ft_strncmp(ptr, ARMAG, SARMAG))

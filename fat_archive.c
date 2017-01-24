@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:23:11 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 14:31:21 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/24 18:43:08 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,12 @@ void	handle_archive(char *ptr, char *file, uint32_t file_size)
 	int				size;
 	struct ar_hdr	*tmp;
 	char			*str;
+	int k = 0;
 
 	arch = (void*)ptr + SARMAG;
 	size = get_name_size(arch->ar_name);
+	if (size ==0)
+		k = 1;
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size;
 	size += *((int*)(arch));
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + sizeof(int);
@@ -52,7 +55,10 @@ void	handle_archive(char *ptr, char *file, uint32_t file_size)
 	tmp = arch;
 	while (tmp < (struct ar_hdr*)(file_size + (void*)ptr))
 	{
-		str = (char*)(ft_strstr(tmp->ar_name, ARFMAG) + ft_strlen(ARFMAG));
+		if (k == 1)
+			str = tmp->ar_name;
+		else
+			str = (char*)(ft_strstr(tmp->ar_name, ARFMAG) + ft_strlen(ARFMAG));
 		if (ft_strcmp(str, SYMDEF) != 0 && ft_strcmp(str, SYMDEF_SORTED) != 0)
 		{
 			ft_printf("\n%s(%s):\n", file, (char*)(ft_strstr(tmp->ar_name,
@@ -62,4 +68,13 @@ void	handle_archive(char *ptr, char *file, uint32_t file_size)
 		}
 		tmp = (void*)tmp + ft_atoi(tmp->ar_size) + sizeof(struct ar_hdr);
 	}
+}
+
+void	pre_fat(unsigned int number, char *ptr, int file_size, char *file)
+{
+	if (number == FAT_CIGAM)
+		set_swap_fat(1);
+	else
+		set_swap_fat(0);
+	handle_fat(ptr, file_size, file);
 }

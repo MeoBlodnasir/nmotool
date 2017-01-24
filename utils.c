@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:21:25 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 14:57:02 by aduban           ###   ########.fr       */
+/*   Updated: 2017/01/24 18:40:07 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,5 +82,7 @@ int			get_name_size(char *name)
 	int size;
 
 	size = ft_atoi(ft_strchr(name, '/') + 1);
+	if (size== 0)
+		exit(0);
 	return (size);
 }
