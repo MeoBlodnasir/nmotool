@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/23 15:46:09 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 15:46:48 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 17:15:33 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ void	handle_64(char *ptr)
 			return ;
 		}
 		lc = (void*)lc + swap_32(lc->cmdsize);
+		handle_segv(NULL, 0, lc);
 	}
 }
 
@@ -60,5 +61,6 @@ void	handle_32(char *ptr)
 			return ;
 		}
 		lc = (void*)lc + swap_32(lc->cmdsize);
+		handle_segv(NULL, 0, lc);
 	}
 }

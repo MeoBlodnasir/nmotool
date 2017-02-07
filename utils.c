@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:21:25 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/24 18:40:07 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 17:14:41 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,9 @@ void		fill_list(struct symtab_command *sym, char *ptr, t_sect *sects)
 
 	elems = NULL;
 	array = (void*)ptr + swap_32(sym->symoff);
+	handle_segv(NULL, 0, array);
 	stringtable = (void*)ptr + swap_32(sym->stroff);
+	handle_segv(NULL, 0, stringtable);
 	i = -1;
 	while (++i < (int)swap_32(sym->nsyms))
 	{
@@ -77,12 +79,32 @@ void		fill_list(struct symtab_command *sym, char *ptr, t_sect *sects)
 	print_list(elems);
 }
 
+char		*ft_strchrsegv(const char *s, int c)
+{
+	int t;
+
+	t = 0;
+	if ((char)c == '\0')
+		return ((char*)(s + ft_strlen(s)));
+	handle_segv(NULL, 0, (void*)s + t);
+	while (s[t] != (char)c && s[t])
+	{
+		t++;
+		handle_segv(NULL, 0, (void*)s + t);
+	}
+	if (s[t] == (char)c)
+		return ((char*)(s + t));
+	return (0);
+}
+
 int			get_name_size(char *name)
 {
-	int size;
+	int		size;
+	char	*str;
 
-	size = ft_atoi(ft_strchr(name, '/') + 1);
-	if (size== 0)
+	str = ft_strchrsegv(name, '/') + 1;
+	size = ft_atoi(str);
+	if (size == 0)
 		exit(0);
 	return (size);
 }

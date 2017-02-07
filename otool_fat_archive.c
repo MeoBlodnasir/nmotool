@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/23 15:48:49 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 16:07:31 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 17:20:47 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ void			handle_fat(t_file f)
 		{
 			offset = arch->offset;
 			f.ptr = f.ptr + swap(offset);
+			handle_segv(NULL, 0, f.ptr);
 			otool(f, 0);
 			return ;
 		}
@@ -43,13 +44,18 @@ struct ar_hdr	*get_sizes(char *ptr)
 	struct ar_hdr	*arch;
 
 	arch = (void*)ptr + SARMAG;
+	handle_segv(NULL, 0, arch->ar_name);
+	handle_segv(NULL, 0, arch);
 	size = get_name_size(arch->ar_name);
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size;
+	handle_segv(NULL, 0, arch);
 	size += *((int*)(arch));
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + sizeof(int);
+	handle_segv(NULL, 0, arch);
 	size += *((int*)(arch));
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size +
 		sizeof(int) + sizeof(int);
+	handle_segv(NULL, 0, arch);
 	return (arch);
 }
 
@@ -63,6 +69,7 @@ void			handle_archive(char *ptr, char *file, uint32_t file_size)
 
 	lst = NULL;
 	arch = get_sizes(ptr);
+	handle_segv(NULL, 0, arch);
 	tmp = arch;
 	while (tmp < (struct ar_hdr*)(file_size + (void*)ptr))
 	{

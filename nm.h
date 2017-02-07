@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 17:06:28 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 16:01:48 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,4 +84,5 @@ void					handle_64(char *ptr);
 void					handle_32(char *ptr);
 void					pre_fat(unsigned int number, char *ptr,
 		int file_size, char *file);
+void					handle_segv(void *ptr, int size, void *totest);
 #endif

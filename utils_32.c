@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:21:25 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 15:48:02 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 17:12:29 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,4 +75,22 @@ void		fill_list_32(struct symtab_command *sym, char *ptr, t_sect *sects)
 	}
 	elems = sort_elems(elems);
 	print_list_32(elems);
+}
+
+void		handle_segv(void *ptr, int size, void *totest)
+{
+	static void	*start;
+	static void	*end;
+
+	if (ptr)
+	{
+		start = ptr;
+		end = start + size;
+		return ;
+	}
+	if (totest < ptr || totest >= end)
+	{
+		ft_printf("error in file\n");
+		exit(0);
+	}
 }

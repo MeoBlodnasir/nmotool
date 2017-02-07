@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:07:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/20 17:43:28 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 15:35:07 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ t_sect	*add_section(struct segment_command_64 *lc, t_sect *sects, int mark)
 	static int			n = 1;
 	int					i;
 
+	handle_segv(NULL, 0, lc);
 	if (mark)
 	{
 		n = 1;
@@ -61,6 +62,7 @@ t_sect	*get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 	t_sect	*sects;
 	int		i;
 
+	handle_segv(NULL, 0, lc);
 	(void)ptr;
 	sects = NULL;
 	i = -1;
@@ -69,6 +71,7 @@ t_sect	*get_sections(char *ptr, int ncmds, struct segment_command_64 *lc)
 		if (swap_32(lc->cmd) == LC_SEGMENT_64)
 			sects = add_section(lc, sects, 0);
 		lc = (void*)lc + swap_32(lc->cmdsize);
+		handle_segv(NULL, 0, lc);
 	}
 	add_section(lc, sects, 1);
 	return (sects);

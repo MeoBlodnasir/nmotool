@@ -6,13 +6,13 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:23:11 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/24 18:43:08 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 17:19:23 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "nm.h"
 
-void	handle_fat(char *ptr, int file_size, char *file)
+void			handle_fat(char *ptr, int file_size, char *file)
 {
 	struct fat_header	*fathead;
 	struct fat_arch		*arch;
@@ -27,6 +27,7 @@ void	handle_fat(char *ptr, int file_size, char *file)
 		if (swap_32_fat(arch->cputype) == CPU_TYPE_X86_64)
 		{
 			offset = swap_32_fat(arch->offset);
+			handle_segv(NULL, 0, ptr + offset);
 			nm(ptr + offset, file, file_size, 0);
 			return ;
 		}
@@ -35,24 +36,33 @@ void	handle_fat(char *ptr, int file_size, char *file)
 	}
 }
 
-void	handle_archive(char *ptr, char *file, uint32_t file_size)
+struct ar_hdr	*get_arch(char *ptr, int *k)
 {
 	struct ar_hdr	*arch;
 	int				size;
-	struct ar_hdr	*tmp;
-	char			*str;
-	int k = 0;
 
 	arch = (void*)ptr + SARMAG;
+	handle_segv(NULL, 0, arch);
 	size = get_name_size(arch->ar_name);
-	if (size ==0)
-		k = 1;
+	if (size == 0)
+		*k = 1;
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size;
 	size += *((int*)(arch));
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + sizeof(int);
 	size += *((int*)(arch));
 	arch = (void*)ptr + sizeof(*arch) + SARMAG + size + (2 * sizeof(int));
-	tmp = arch;
+	handle_segv(NULL, 0, arch);
+	return (arch);
+}
+
+void			handle_archive(char *ptr, char *file, uint32_t file_size)
+{
+	struct ar_hdr	*tmp;
+	char			*str;
+	int				k;
+
+	k = 0;
+	tmp = get_arch(ptr, &k);
 	while (tmp < (struct ar_hdr*)(file_size + (void*)ptr))
 	{
 		if (k == 1)
@@ -70,7 +80,8 @@ void	handle_archive(char *ptr, char *file, uint32_t file_size)
 	}
 }
 
-void	pre_fat(unsigned int number, char *ptr, int file_size, char *file)
+void			pre_fat(unsigned int number, char *ptr, int file_size,
+		char *file)
 {
 	if (number == FAT_CIGAM)
 		set_swap_fat(1);

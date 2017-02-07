@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:54:08 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 16:24:51 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 16:01:59 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,5 +79,6 @@ int						set_swap_fat(int i);
 uint32_t				swap(uint32_t val);
 uint32_t				swap_32(uint32_t i);
 int64_t					swap_endian_64(int64_t i);
+void					handle_segv(void *ptr, int size, void *totest);
 
 #endif

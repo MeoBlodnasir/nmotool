@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:04:28 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/20 17:50:50 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 15:40:54 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ char	get_corresponding_sect(uint8_t nsect, t_sect *sects)
 
 char	get_elem_type(struct nlist_64 *array, int i, int t)
 {
+	handle_segv(NULL, 0, array);
 	if (t == N_PBUD)
 		return ('U');
 	else if (t == N_UNDF)

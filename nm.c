@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 17:06:09 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 17:22:24 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,9 @@ void	nm(void *ptr, char *file, uint32_t file_size, int multiple)
 		handle_32(ptr);
 	}
 	else if (!ft_strncmp(ptr, ARMAG, SARMAG))
+	{
 		handle_archive(ptr, file, file_size);
+	}
 	else
 		ft_putendl_fd("Wrong binary format", 2);
 }
@@ -80,6 +82,7 @@ int		handle_file(char *file, int multiple)
 	ptr = get_ptr(ptr, file, &buf);
 	if (!ptr)
 		exit(0);
+	handle_segv(ptr, buf.st_size, NULL);
 	nm(ptr, file, buf.st_size, multiple);
 	if (munmap(ptr, buf.st_size) < 0)
 	{

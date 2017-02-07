@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/12 13:53:53 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 16:37:07 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 16:00:08 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ int		handle_file(char *file)
 	f.ptr = ptr;
 	f.file = file;
 	f.size = buf.st_size;
+	handle_segv(ptr, buf.st_size, NULL);
 	otool(f, 1);
 	if (munmap(ptr, buf.st_size) < 0)
 	{

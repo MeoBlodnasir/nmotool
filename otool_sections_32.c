@@ -6,7 +6,7 @@
 /*   By: aduban <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/01/19 18:32:07 by aduban            #+#    #+#             */
-/*   Updated: 2017/01/23 16:37:26 by aduban           ###   ########.fr       */
+/*   Updated: 2017/02/07 14:59:18 by aduban           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,9 @@ void	add_section_32(struct segment_command *lc, int mark, char *ptr)
 	int				j;
 
 	(void)mark;
+	handle_segv(NULL, 0, lc);
 	sec = (struct section*)(lc + sizeof(lc) / sizeof(void*));
+	handle_segv(NULL, 0, sec);
 	j = -1;
 	while (++j < (int)swap_32(lc->nsects))
 	{
@@ -28,6 +30,7 @@ void	add_section_32(struct segment_command *lc, int mark, char *ptr)
 			print_otool_32(sec, ptr);
 		}
 		sec++;
+		handle_segv(NULL, 0, sec);
 	}
 }
 
@@ -43,6 +46,7 @@ t_sect	*get_sections_32(char *ptr, int ncmds, struct segment_command *lc)
 		if (swap_32(lc->cmd) == LC_SEGMENT)
 			add_section_32(lc, 0, ptr);
 		lc = (void*)lc + swap_32(lc->cmdsize);
+		handle_segv(NULL, 0, lc);
 	}
 	return (sects);
 }
@@ -58,6 +62,7 @@ void	handle_32(char *ptr)
 	norm.ncmds = header->ncmds;
 	lc = (void *)ptr + sizeof(*header);
 	norm.i = 0;
+	handle_segv(NULL, 0, lc);
 	sects = get_sections_32(ptr, norm.ncmds, (struct segment_command*)lc);
 	return ;
 }
